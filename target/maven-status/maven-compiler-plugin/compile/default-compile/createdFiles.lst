@@ -1,0 +1,6 @@
+org/forgerock/LdapQueryNode$HeartbeatTimeUnit.class
+org/forgerock/LdapQueryNode.class
+org/forgerock/LdapQueryNode$LdapConnectionMode.class
+org/forgerock/LdapQueryNodePlugin.class
+org/forgerock/LdapQueryNode$Config.class
+org/forgerock/LdapQueryNode$SearchScope.class
