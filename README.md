@@ -22,7 +22,7 @@ An authentication node for ForgeRock's [Identity Platform][forgerock_platform] 6
 
 Copy the .jar file from the ../target directory into the ../web-container/webapps/openam/WEB-INF/lib directory where AM is deployed. Restart the web container to pick up the new node. The node will then appear in the authentication trees components palette.
 
-## How to use
+## How to use it
 
 This node has two main functions:
 
