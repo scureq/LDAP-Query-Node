@@ -18,6 +18,9 @@
 
 An authentication node for ForgeRock's [Identity Platform][forgerock_platform] 6.5.0 and above. This node allows querying external LDAP server for additional user information. It is based on out of the box LDAP Decision Node.
 
+### Important note
+This is a "Community" node and should be used for demonstration purposes only. The code has not been tested at scale, edge cases nor passed standard ForgeRock QA process.
+
 ## Installation
 
 Copy the .jar file from the ../target directory into the ../web-container/webapps/openam/WEB-INF/lib directory where AM is deployed. Restart the web container to pick up the new node. The node will then appear in the authentication trees components palette.
