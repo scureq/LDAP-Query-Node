@@ -96,8 +96,8 @@ public class LdapQueryNodePlugin extends AbstractNodeAmPlugin {
      * @param startupType The type of startup that is taking place.
      */
 	@Override
-	public void onStartup() throws PluginException {
-		super.onStartup();
+	public void onStartup(org.forgerock.openam.plugins.StartupType startupType) throws PluginException {
+		super.onStartup(startupType);
 	}
 
     /** 

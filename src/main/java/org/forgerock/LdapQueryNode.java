@@ -18,12 +18,11 @@
 package org.forgerock;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
-import com.sun.identity.shared.debug.Debug;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.sun.identity.sm.RequiredValueValidator;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
@@ -32,15 +31,8 @@ import org.forgerock.openam.core.realms.Realm;
 import org.forgerock.openam.ldap.LDAPAuthUtils;
 
 import com.google.inject.assistedinject.Assisted;
-import com.iplanet.sso.SSOException;
-import com.sun.identity.idm.AMIdentity;
-import com.sun.identity.idm.IdRepoException;
-import com.sun.identity.idm.IdType;
-import com.sun.identity.idm.IdUtils;
 import org.forgerock.openam.ldap.LDAPUtilException;
 import org.forgerock.openam.sm.annotations.adapters.Password;
-import org.forgerock.opendj.io.Ldap;
-import org.forgerock.opendj.ldap.SearchScope;
 
 import static org.forgerock.LdapQueryNode.HeartbeatTimeUnit.SECONDS;
 import static org.forgerock.LdapQueryNode.LdapConnectionMode.LDAP;
@@ -60,8 +52,7 @@ public class LdapQueryNode extends AbstractDecisionNode {
 
     private final Config config;
     private final Realm realm;
-    private final static String DEBUG_FILE = "LdapQueryNode";
-    protected Debug debug = Debug.getInstance(DEBUG_FILE);
+    private final Logger logger = LoggerFactory.getLogger(LdapQueryNode.class);
     private LDAPAuthUtils ldapUtil;
     private ResourceBundle bundle;
     private static final String BUNDLE = "org/forgerock/LdapQueryNode";
@@ -157,49 +148,49 @@ public class LdapQueryNode extends AbstractDecisionNode {
 
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
-        debug.error("[" + DEBUG_FILE + "]: LDAP Query Node Started");
+        logger.error("LDAP Query Node Started");
         JsonValue newState = context.sharedState.copy();
         Action.ActionBuilder actionBuilder = goTo(true);
         try {
             ldapUtil = initializeLDAP(context);
             String userName = context.sharedState.get(SharedStateConstants.USERNAME).asString();
-            debug.error("[" + DEBUG_FILE + "]: Init Username: " + userName);
+            logger.error("Init Username: " + userName);
             ldapUtil.setUserId(userName);
             ldapUtil.searchForUser();
             String userSearchResult = ldapUtil.getState().name();
-            debug.error("[" + DEBUG_FILE + "]: User Search Result: " + ldapUtil.getState().name());
+            logger.error("User Search Result: " + ldapUtil.getState().name());
 
             switch (userSearchResult) {
                 case ("USER_NOT_FOUND"):
-                    debug.error("[" + DEBUG_FILE + "]: RESULT: User was not found.");
+                    logger.error("RESULT: User was not found.");
                     actionBuilder = goTo(false);
                     break;
                 case ("USER_FOUND"):
-                    debug.error("[" + DEBUG_FILE + "]: RESULT: User was found.");
+                    logger.error("RESULT: User was found.");
                     if (config.saveToSharedState() == true && !config.attributesToSave().isEmpty()) {
-                        debug.error("[" + DEBUG_FILE + "]: RESULT User attributes found as requested:" + ldapUtil.getUserAttributeValues());
+                        logger.error("RESULT User attributes found as requested:" + ldapUtil.getUserAttributeValues());
                         ldapUtil.getUserAttributeValues().forEach(newState::put);
                         for (String name : ldapUtil.getUserAttributeValues().keySet()) {
                             String key = name;
                             String value = ldapUtil.getUserAttributeValues().get(name).toString().replace("[","").replace("]","");
-                            debug.error("[" + DEBUG_FILE + "]: printing... :" + value);
+                            logger.error("printing... :" + value);
                             newState.put(key, value);
                         }
                     } else {
-                        debug.error("[" + DEBUG_FILE + "]: No attributes requested to be returned.");
+                        logger.error("No attributes requested to be returned.");
                     }
                     actionBuilder = goTo(true);
                     break;
                 case ("SERVER_DOWN"):
-                    debug.error("[" + DEBUG_FILE + "]: RESULT: Server is down.");
+                    logger.error("RESULT: Server is down.");
                     actionBuilder = goTo(false);
                     break;
                 default:
-                    debug.error("[" + DEBUG_FILE + "]: RESULT: Unknown result... : " + userSearchResult);
+                    logger.error("RESULT: Unknown result... : " + userSearchResult);
                     actionBuilder = goTo(false);
             }
         } catch (NodeProcessException | LDAPUtilException e) {
-            debug.error("[" + DEBUG_FILE + "]: Something went wrong! " + e);
+            logger.error("Something went wrong! " + e);
             actionBuilder = goTo(false);
         }
 
@@ -218,7 +209,7 @@ public class LdapQueryNode extends AbstractDecisionNode {
             String baseDn = config.accountSearchBaseDn().stream()
                     .collect(Collectors.joining(","));
             ldapUtil = new LDAPAuthUtils(config.primaryServers(), config.secondaryServers(),
-                    isSecure, bundle, baseDn, debug);
+                    isSecure, bundle, baseDn, logger);
 
             ldapUtil.setScope(searchScope);
             if (config.userSearchFilter().isPresent()) {
@@ -238,7 +229,7 @@ public class LdapQueryNode extends AbstractDecisionNode {
             ldapUtil.setHeartBeatInterval(config.heartbeatInterval());
             ldapUtil.setHeartBeatTimeUnit(config.heartbeatTimeUnit().toString());
             ldapUtil.setOperationTimeout(config.ldapOperationsTimeout());
-            debug.error("[" + DEBUG_FILE + "]: Init result: \n"
+            logger.error("Init result: \n"
                     + "nbaseDN-> " + config.adminDn()
                     + "\nuserNamingAttr-> " + config.userProfileAttribute()
                     + "\nuserSearchAttr(s)-> " + config.searchFilterAttributes()
@@ -254,7 +245,7 @@ public class LdapQueryNode extends AbstractDecisionNode {
                     + "\nheartBeatTimeUnit-> " + config.heartbeatTimeUnit()
                     + "\noperationTimeout-> " + config.ldapOperationsTimeout());
         } catch (LDAPUtilException e) {
-            debug.error("[" + DEBUG_FILE + "]: Init Exception");
+            logger.error("Init Exception");
 
             throw new NodeProcessException(bundle.getString("NoServer"), e);
         }
